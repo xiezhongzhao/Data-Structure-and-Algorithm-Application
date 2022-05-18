@@ -1,0 +1,3 @@
+D:\Clion2021\bin\cmake\win\bin\cmake.exe -E rm -f CMakeFiles\Data_Structure_and_Algorithm_Application.dir/objects.a
+C:\TDM-GCC-64\bin\ar.exe cr CMakeFiles\Data_Structure_and_Algorithm_Application.dir/objects.a @CMakeFiles\Data_Structure_and_Algorithm_Application.dir\objects1.rsp
+C:\TDM-GCC-64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\Data_Structure_and_Algorithm_Application.dir/objects.a -Wl,--no-whole-archive -o Data_Structure_and_Algorithm_Application.exe -Wl,--out-implib,libData_Structure_and_Algorithm_Application.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\Data_Structure_and_Algorithm_Application.dir\linklibs.rsp
