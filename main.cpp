@@ -40,20 +40,48 @@ public:
     }
 };
 
+class dp{
+public:
+    void bagProblem(){
+        vector<int> weight = {1, 3, 4};
+        vector<int> value = {15, 20, 30};
+        int bagweight = 4;
+
+        vector<vector<int>> dp(weight.size(), vector<int>(bagweight+1, 0));
+
+        for(int j=weight[0]; j<=bagweight; j++){
+            dp[0][j] = value[0];
+        }
+
+        for(int i=1; i<weight.size(); i++){
+            for(int j=0; j<=bagweight; j++){
+                if(j < weight[i])
+                    dp[i][j] = dp[i-1][j];
+                else
+                    dp[i][j] = max(dp[i-1][j], dp[i-1][j-weight[i]]+value[i]);
+            }
+        }
+        cout << dp[weight.size()-1][bagweight] << endl;
+    }
+};
+
 int main(){
     ios::sync_with_stdio(0);
     cin.tie(0);
 
-    vector<int> a = {1,2,3};
-    Solution s;
-    vector<vector<int>> res = s.permute(a);
+//    vector<int> a = {1,2,3};
+//    Solution s;
+//    vector<vector<int>> res = s.permute(a);
+//
+//    for(int i=0; i<res.size(); i++){
+//        for(int j=0; j<res[0].size(); j++){
+//            cout << res[i][j] << ", ";
+//        }
+//        cout << "\n";
+//    }
 
-    for(int i=0; i<res.size(); i++){
-        for(int j=0; j<res[0].size(); j++){
-            cout << res[i][j] << ", ";
-        }
-        cout << "\n";
-    }
+    dp bag;
+    bag.bagProblem();
     return 0;
 }
 
