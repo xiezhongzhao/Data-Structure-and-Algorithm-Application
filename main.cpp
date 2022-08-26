@@ -2,88 +2,108 @@
 // Created by ASUS on 2022/5/18.
 //
 #include <bits/stdc++.h>
+#include <thread>
+#include <mutex>
+#include <queue>
+#include <condition_variable>
 using namespace std;
 
-#define ll long long
-#define ar array
-
-class Solution {
-public:
-//输入：nums = [1,2,3]
-//输出：[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
-    vector<vector<int>> res;
-    vector<int> path;
-    void backtracking(vector<int>& nums, vector<bool>& used){
-        if(path.size() == nums.size()){
-            res.push_back(path);
-            return ;
-        }
-
-        for(int i=0; i<nums.size(); i++){
-            if(used[i] == true)
-                continue;
-            used[i] = true;
-            path.push_back(nums[i]);
-            backtracking(nums, used);
-            path.pop_back();
-            used[i] = false;
-        }
-    }
-
-    vector<vector<int>> permute(vector<int>& nums) {
-        res.clear();
-        path.clear();
-
-        vector<bool> used(nums.size(), false);
-        backtracking(nums, used);
-        return res;
-    }
+struct CacheData{
+    int id;
+    string data;
 };
 
-class dp{
-public:
-    void bagProblem(){
-        vector<int> weight = {1, 3, 4};
-        vector<int> value = {15, 20, 30};
-        int bagweight = 4;
+queue<CacheData> Q;
+const int MAX_CACHEDATA_LENGTH = 10;
+mutex m;
+condition_variable condConsumer;
+condition_variable condProducer;
+int ID = 1;
 
-        vector<vector<int>> dp(weight.size(), vector<int>(bagweight+1, 0));
-
-        for(int j=weight[0]; j<=bagweight; j++){
-            dp[0][j] = value[0];
-        }
-
-        for(int i=1; i<weight.size(); i++){
-            for(int j=0; j<=bagweight; j++){
-                if(j < weight[i])
-                    dp[i][j] = dp[i-1][j];
-                else
-                    dp[i][j] = max(dp[i-1][j], dp[i-1][j-weight[i]]+value[i]);
-            }
-        }
-        cout << dp[weight.size()-1][bagweight] << endl;
+// consumer action
+void ConsumerActor(){
+    unique_lock<mutex> lockerConsumer(m);
+    cout << "[" << this_thread::get_id() << "] get the lock" << endl;
+    while(Q.empty()){
+        cout << "the queue is empty, consumer sleep" << endl;
+        cout << "[" << this_thread::get_id() << "] release the lock" << endl;
+        //if the queue is empty, the consumer will stop
+        condConsumer.wait(lockerConsumer);
+        cout << "[" << this_thread::get_id() << "] get the lock again" << endl;
     }
-};
+    cout << "[" << this_thread::get_id() << "]";
+    CacheData temp = Q.front();
+    cout << "-ID: " << temp.id << "Data: " << temp.data << endl;
+    Q.pop();
+    condProducer.notify_one();
+    cout << "[" << this_thread::get_id() << "] release the lock" << endl;
+}
+
+// producer action
+void ProducerActor(){
+    unique_lock<mutex> lockerProducer(m);
+    cout << "[" << this_thread::get_id() << "] get the lock" << endl;
+    while(Q.size() > MAX_CACHEDATA_LENGTH){
+        cout << "if the queue is full, the producer will sleep" << endl;
+        cout << "[" << this_thread::get_id() << "] release the lock" << endl;
+        condProducer.wait(lockerProducer);
+        cout << "[" << this_thread::get_id() << "] get the lock again" << endl;
+    }
+    cout << "[" << this_thread::get_id() << endl;
+    CacheData temp;
+    temp.id = ID++;
+    temp.data = "********";
+    cout << "+ID: " << temp.id << " Data: " << temp.data << endl;
+    Q.push(temp);
+    condConsumer.notify_one();
+    cout << "[" << this_thread::get_id() << "] release the lock" << endl;
+}
+
+// consumer
+void ConsumerTask(){
+    while(1){
+        ConsumerActor();
+    }
+}
+
+// producer
+void ProducerTask(){
+    while(1){
+        ProducerActor();
+    }
+}
+
+// manage the thread func
+void Dispatch(int ConsumerNum, int ProducerNum){
+    vector<thread> thsC;
+    for(int i=0; i<ConsumerNum; i++){
+        thsC.push_back(thread(ConsumerTask));
+    }
+
+    vector<thread> thsP;
+    for(int i=0; i<ProducerNum; i++){
+        thsP.push_back(thread(ProducerTask));
+    }
+
+    for(int i=0; i<ConsumerNum; i++){
+        if(thsC[i].joinable())
+            thsC[i].join();
+    }
+
+    for(int i=0; i<ProducerNum; i++){
+        if(thsP[i].joinable())
+            thsP[i].join();
+    }
+
+}
 
 int main(){
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-
-//    vector<int> a = {1,2,3};
-//    Solution s;
-//    vector<vector<int>> res = s.permute(a);
-//
-//    for(int i=0; i<res.size(); i++){
-//        for(int j=0; j<res[0].size(); j++){
-//            cout << res[i][j] << ", ";
-//        }
-//        cout << "\n";
-//    }
-
-    dp bag;
-    bag.bagProblem();
+    // the num of consumers, the num of producer
+    Dispatch(32, 16);
     return 0;
 }
+
+
 
 
 
